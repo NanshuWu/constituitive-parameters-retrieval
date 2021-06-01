@@ -17,3 +17,11 @@ This is a set of scripts for retrieving constituitive parameters (e.g. relative 
 If you want to test scripts with simulation data, say from CST, be sure to show original data with 'real/imag' format. Then, export S11 and S21 to two individual files. After chosing the script, replace the `filename_1` with your S11 file, and `filename_2` with S21 file. Finally set `is_simu=1`.
 
 If data is from measurement, be sure to save them with `.S2P` format to make sure that four S parameters are included. For experiment file, you only have to replace `filename_1` with the file path, and set `is_simu=0`.
+
+## Choose algorithm according to material properties
+
+| Material length/magnetic properties  | Methods | Speed | Accuracy |
+|--------------------------------------|---------|-------|----------|
+| Lossy solids+long+whatever-magnetics | NRW     | Fast  | Medium   |
+| low loss solids+long+non-magnetics   | NIST    | Slow  | Good     |
+| low loss solids+long+non-magnetics   | NNI     | Slow  | Good     |
