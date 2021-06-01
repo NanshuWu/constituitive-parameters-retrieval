@@ -1,4 +1,4 @@
-%#######################################################################
+nd%#######################################################################
 % multiple frequency in a waveguide environment
 % sample has thickness delta, total length of the waveguide is d1+delta+d2
 % 
@@ -53,8 +53,8 @@ filename_2='data/wr90 s21 fr-4 d1 0 d2 0 delta 73.txt';
 % tic
 a=22.86e-3; % waveguide size
 h=10.16e-3; % waveguide size
-d1=82e-3; % distance from port 1 to sample front surface 
-d2=81e-3;% distance from port 2 to sample back surface
+d1=82e-3; % distance from port 1 to sample front face
+d2=81e-3;% distance from port 2 to sample end face
 delta=2e-3; % sample thickness
 is_simu=0; % for simulation choose 1, for experiment choose 0;
 n=-5:5; % branches
