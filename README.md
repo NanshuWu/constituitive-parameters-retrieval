@@ -22,6 +22,6 @@ If data is from measurement, be sure to save them with `.S2P` format to make sur
 
 | Material length/magnetic properties  | Methods | Speed | Accuracy |
 |--------------------------------------|---------|-------|----------|
-| Lossy solids+long+whatever-magnetics | NRW     | Fast  | Medium   |
-| low loss solids+long+non-magnetics   | NIST    | Slow  | Good     |
-| low loss solids+long+non-magnetics   | NNI     | Slow  | Good     |
+| Lossy solids + short + whatever magnetics | NRW     | Fast  | Medium   |
+| low loss solids + whatever length + non-magnetics   | NIST    | Slow  | Good     |
+| low loss solids + whatever length + non-magnetics   | NNI     | Slow  | Good     |
