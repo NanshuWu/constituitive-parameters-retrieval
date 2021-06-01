@@ -51,13 +51,14 @@ clc
 filename_1='FR4_may30/FR4-SAMPLE3-D1=82-D2=81-DELTA=2.S2P';
 filename_2='data/wr90 s21 fr-4 d1 0 d2 0 delta 73.txt';
 % tic
-a=22.86e-3;
-d1=82e-3; 
-d2=81e-3;
-delta=2e-3;
-is_simu=0;
-n=-5:5;
-ds=1;
+a=22.86e-3; % waveguide size
+h=10.16e-3; % waveguide size
+d1=82e-3; % distance from port 1 to sample front surface 
+d2=81e-3;% distance from port 2 to sample back surface
+delta=2e-3; % sample thickness
+is_simu=0; % for simulation choose 1, for experiment choose 0;
+n=-5:5; % branches
+ds=1; % sampling interval
 %#######################################################################
 eps0=8.85e-12; 
 mu0=4*pi*1e-7; 
@@ -69,7 +70,6 @@ legend_str{ni} = ['n=' num2str(n(ni))];
 end
 %#######################################################################
 % import data 
-%#######################################################################
 switch is_simu
     case 1
         [ f, S11_re, S11_img ]=readS( filename_1,3,ds);
@@ -92,7 +92,6 @@ Z0=omega.*mu0./beta0;
 lambda0=c./f;% working frequency wavelength
 lambdac=2*a;
 lambda0g=lambda0./sqrt(1-(f_cutoff./f).^2);
-%    lambda0g=1/sqrt((1./lambda0).^2-(1./lambdac).^2);
 group_delay_calculated=zeros(length(f),length(n));
 s21=(S21_mag.*exp(1i.*S21_phase)).*exp(1i.*beta0.*(d1+d2));
 s11=(S11_mag.*exp(1i.*S11_phase)).*exp(1i.*2.*beta0.*d1);
@@ -127,15 +126,15 @@ id=reshape(id,length(f),[]);
 mu_ret=ones(length(f),length(n));
 eps_ret=lambda0.^2.*(id.^2+(1./lambdac).^2)./mu_ret;
 % %#######################################################################
-% Group Delay measured
+% group delay measured
 group_delay_measured=-gradient(unwrap(angle(T)))./gradient(f)/pi/2;
-% Calculate Group Delay
+% group delay calculated
 for ni=1:length(n)
-% partial_p=sqrt(((eps_ret(:,ni).*mu_ret(:,ni))./(lambda0.^2))-(1./lambdac).^2);
 partial_p=sqrt((eps_ret(:,ni).*mu_ret(:,ni)./lambda0./lambda0)-(1/lambdac).^2);
 group_delay_calculated(:,ni)=delta.*gradient(partial_p)./gradient(f);
 end
 %#######################################################################
+% evaluate goodness of fit
 R_square=zeros(1,length(n));
 for ni=1:length(n)
     ymean=mean(real(group_delay_measured));
@@ -145,90 +144,37 @@ for ni=1:length(n)
     R_square(ni)=1-(SSres)./(SStot);
 end
 %#######################################################################
-% Branch Selection
+% branch selection
 selected_branch_base=find(R_square>0,1,'first');
 selected_branch_all=find(R_square>0);
 bss=find(min(abs(sum(diff(real(eps_ret(:,selected_branch_all))))))==abs(sum(diff(real(eps_ret(:,selected_branch_all))))));
 selected_branch=selected_branch_base+bss-1;
-
-% if eps_ret(1,selected_branch)<0.95
-%     selected_branch=selected_branch+1;
-% end
 %#######################################################################
-figure(1) 
-subplot(121);
+fg1=figure(1);
+subplot(151);
 plot(f/1e9,real(mu_ret(:,selected_branch))); 
-% legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz')
 ylabel('Re(\mu)') 
 ylim([-10 10])
-subplot(122) 
-plot(f/1e9,imag(mu_ret(:,selected_branch))); 
-% legend(legend_str,'Location','southeast');
+subplot(152) 
+plot(f/1e9,imag(conj(mu_ret(:,selected_branch)))); 
 xlabel('Frequency in GHz') 
 ylabel('Im(\mu)')
 ylim([-10 10])
-
-figure(2)
-subplot(121); 
+subplot(153); 
 plot(f/1e9,real(eps_ret(:,selected_branch))); 
-% legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Re(\epsilon)') 
 ylim([-10 10])
-subplot(122) 
-plot(f/1e9,imag(eps_ret(:,selected_branch))); 
-% legend(legend_str,'Location','southeast');
+subplot(154) 
+plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))); 
 xlabel('Frequency in GHz') 
 ylabel('Im(\epsilon)')
 ylim([-10 10])
-
-% figure(1) 
-% subplot(121);
-% plot(repmat(f/1e9,1,length(n)),real(mu_ret),'.','color','k'); 
-% xlabel('Frequency in GHz')
-% ylabel('Re(\mu)') 
-% ylim([-10 10])
-% subplot(122) 
-% plot(repmat(f/1e9,1,length(n)),imag(mu_ret),'.','color','k'); 
-% xlabel('Frequency in GHz') 
-% ylabel('Im(\mu)')
-% ylim([-10 10])
-% 
-% figure(2)
-% subplot(121); 
-% plot(repmat(f/1e9,1,length(n)),real(eps_ret),'.'); 
-% legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz') 
-% ylabel('Re(\epsilon)') 
-% ylim([-10 10])
-% subplot(122) 
-% plot(repmat(f/1e9,1,length(n)),imag(eps_ret),'.'); 
-% legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz') 
-% ylabel('Im(\epsilon)')
-% ylim([-10 10])
-
-% 
-% figure(3) 
-% subplot(121); 
-% plot(f/1e9,real(n2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Re(n)') 
-% ylim([-10 10])
-% subplot(122) 
-% plot(f/1e9,imag(n2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Im(n)')
-% ylim([-10 10])
-
-% figure(4) 
-% subplot(121); 
-% plot(f/1e9,real(Z2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Re(Z)') 
-% subplot(122) 
-% plot(f/1e9,imag(Z2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Im(Z)')
+subplot(155)
+plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))./real(eps_ret(:,selected_branch))); 
+xlabel('Frequency in GHz') 
+ylabel('tan(\delta)')
+ylim([0 1])
+fg1.Position = [600 600 1500 600];
 % toc
