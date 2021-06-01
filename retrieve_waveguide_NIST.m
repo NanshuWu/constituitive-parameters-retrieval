@@ -45,7 +45,7 @@ clear
 clc
 %#######################################################################
 % tic
-filename_1='FR4_may30/FR4-SAMPLE3-D1=82-D2=81-DELTA=2.S2P';
+filename_1='dataset/FR4_d1_82_d2_81_delta_2.S2P';
 filename_2='data/retrieve s21 ptfe lossy d 30 d1 75.15 d2 48.85.txt';
 is_simu=0;% simulation, choose 1; experiment choose 0;
 a=22.86e-3; % waveguide size
