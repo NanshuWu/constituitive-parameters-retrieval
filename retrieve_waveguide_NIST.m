@@ -458,14 +458,14 @@ xlabel('Frequency in GHz')
 ylabel('tested phase s11, s21')
 ylim([-180,180])
 
-figure(4) 
-subplot(121); 
-plot(f/1e9,real(group_delay_measured.*1e9));
-xlabel('Frequency in GHz') 
-ylabel('Group Delay Measured')
-% ylim([-1,1])
-subplot(122); 
-plot(repmat(f/1e9,1,length(n)),real(group_delay_calculated.*1e9));
-legend(legend_str,'Location','southeast');
-xlabel('Frequency in GHz') 
-ylabel('Group Delay Measured')
+% figure(4) 
+% subplot(121); 
+% plot(f/1e9,real(group_delay_measured.*1e9));
+% xlabel('Frequency in GHz') 
+% ylabel('Group Delay Measured')
+% % ylim([-1,1])
+% subplot(122); 
+% plot(repmat(f/1e9,1,length(n)),real(group_delay_calculated.*1e9));
+% legend(legend_str,'Location','southeast');
+% xlabel('Frequency in GHz') 
+% ylabel('Group Delay Measured')
