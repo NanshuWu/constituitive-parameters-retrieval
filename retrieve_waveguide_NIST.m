@@ -46,7 +46,6 @@ clc
 %#######################################################################
 % tic
 filename_1='FR4_may30/FR4-SAMPLE3-D1=82-D2=81-DELTA=2.S2P';
-% filename_1='data/retrieve s11 ptfe lossy d 30 d1 75.15 d2 48.85.txt';
 filename_2='data/retrieve s21 ptfe lossy d 30 d1 75.15 d2 48.85.txt';
 is_simu=0;% simulation, choose 1; experiment choose 0;
 a=22.86e-3;
@@ -99,10 +98,6 @@ group_delay_calculated=zeros(length(f),length(n));
 R1=exp(-1i.*beta0.*d1);R2=exp(-1i.*beta0.*d2);
 s11=(S11_mag.*exp(1i.*S11_phase))./(R1.^2);
 s21=(S21_mag.*exp(1i.*S21_phase))./(R1.*R2);
-
-% s11=(S11_mag.*exp(1i.*S11_phase)).*exp(1i.*2.*beta0.*d1);
-% s21=(S21_mag.*exp(1i.*S21_phase)).*exp(1i.*beta0.*(d1+d2));
-
 X=(s11.^2-s21.^2+1)./2./s11;
 ri_1=X+sqrt(X.^2-1);
 ri_2=X-sqrt(X.^2-1);
@@ -165,10 +160,6 @@ selected_branch_base=find(R_square>0,1,'first');
 selected_branch_all=find(R_square>0);
 bss=find(min(abs(sum(diff(real(eps_ret(:,selected_branch_all))))))==abs(sum(diff(real(eps_ret(:,selected_branch_all))))));
 selected_branch=selected_branch_base+bss-1;
-
-% if eps_ret(1,selected_branch)<0.95
-%     selected_branch=selected_branch+1;
-% end
 %#######################################################################
 switch reduction_method
     case 1
@@ -195,7 +186,7 @@ switch reduction_method
             Gam=@(propc) (propc0-propc)/(propc0+propc);
             transcoef=@(propc) exp(-1*propc*delta);
 
-            fepsr1=@(transcoef,Gam) s11_nr(fi)*s22(fi)-s21_nr(fi)*s12(fi)-exp(-2*propc0*(d1+d2))*((transcoef^2-Gam^2)/(1-(Gam*transcoef)^2));
+            fepsr1=@(transcoef,Gam) s21_nr(fi)*s12(fi)-s11_nr(fi)*s22(fi)-exp(-2*propc0*(d1+d2))*((transcoef^2-Gam^2)/(1-(Gam*transcoef)^2));
             
             eps_gr_pd=((eps_gr+h)+1i*eps_gi);
             eps_gr_nd=((eps_gr-h)+1i*eps_gi);
@@ -206,49 +197,17 @@ switch reduction_method
             Jrei=real((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
             Jier=imag((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
             Jiei=imag((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-
             feps_g=[real(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
             ErrF=abs(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));
-%             if ErrF<h 
-%                 
-%             	break;
-%             end
-%             Errf=Errf+(abs(feps_g(1))+abs(feps_g(2)));
-
-%             if isnan(Jrer)
-%                 Jrer=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jrei)
-%                 Jrei=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jier)
-%                 Jier=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jiei)
-%                 Jiei=1e-8.*randn(1,1)./h/2;
-%             end
-            
             J=[Jrer,Jrei;Jier,Jiei];
-            
-        %     J=[Jrf1,Jrf2;Jif1,Jif2];
             injav=inv(J);
-        %     injav=[Jiei,-Jrei;-Jier,Jrer]./(Jrer*Jiei-Jrei*Jier);
-
             deps=-injav*feps_g;
-        %     deps=-J\feps_g;
-
             if sum(abs(deps))<h
-%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
                 eps_ret(fi,selected_branch)=eps_g;
                 break;
             end
-            
-        %     deps_i=-injav*[imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
-
             eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
-            
             end
-
         end
     case 2
         s21_nr=s21.*exp(-1i.*beta0.*(d1+d2));
@@ -286,63 +245,19 @@ switch reduction_method
             feps_g=[real(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
             
             ErrF=abs(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))));
-            Errf=Errf+(abs(feps_g(1))+abs(feps_g(2)));
-%             if ErrF<h
-%                 eps_ret(fi,selected_branch)=eps_g;
-%             	break;
-%             end
-            
-%             if isnan(Jrer)
-%                 Jrer=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jrei)
-%                 Jrei=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jier)
-%                 Jier=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jiei)
-%                 Jiei=1e-8.*randn(1,1)./h/2;
-%             end
-            
+            Errf=Errf+(abs(feps_g(1))+abs(feps_g(2))); 
             J=[Jrer,Jrei;Jier,Jiei];
-            
-%             gn=1e-8.*randn(2,2);
-%             J=J+gn;
-
-        %     J=[Jrf1,Jrf2;Jif1,Jif2];
             injav=inv(J);
-        %     injav=[Jiei,-Jrei;-Jier,Jrer]./(Jrer*Jiei-Jrei*Jier);
-
             deps=-injav*feps_g;
-        %     deps=-J\feps_g;
-
             if sum(abs(deps))<h
-%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
                 eps_ret(fi,selected_branch)=eps_g;
                 break;
             end
-
-%             if ErrF<h
-%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
-%                 eps_ret(fi,selected_branch)=eps_g;
-%             	break;
-%             end
-
-            %     deps_i=-injav*[imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));       
             end
         end
     otherwise
 end
-%#######################################################################
-% Inperploating 
-% eps_ret=fillmissing(eps_ret,'movmedian',10);
-% eps_ret=fillmissing(eps_ret,'spline');
-%#######################################################################
-% Fitting
-% p = polyfit(f,eps_ret,1);
-% eps_ret=polyval(p,f);
 %#######################################################################
 % Smoothing (The method of maximum entropy)
 switch smooth_method
@@ -388,33 +303,38 @@ switch smooth_method
         eps_ret=smoothdata(eps_ret,'movmean',ave_n);
 end
 %#######################################################################
-figure(1) 
-subplot(121);
+fg1=figure(1);
+subplot(151);
 plot(f/1e9,real(mu_ret(:,selected_branch))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz')
 ylabel('Re(\mu)') 
 ylim([-10 10])
-subplot(122) 
-plot(f/1e9,imag(mu_ret(:,selected_branch))); 
+subplot(152) 
+plot(f/1e9,imag(conj(mu_ret(:,selected_branch)))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Im(\mu)')
 ylim([-10 10])
-
-figure(2)
-subplot(121); 
+subplot(153); 
 plot(f/1e9,real(eps_ret(:,selected_branch))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Re(\epsilon)') 
 ylim([-10 10])
-subplot(122) 
-plot(f/1e9,imag(eps_ret(:,selected_branch))); 
+subplot(154) 
+plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Im(\epsilon)')
 ylim([-10 10])
+subplot(155)
+plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))./real(eps_ret(:,selected_branch))); 
+% legend(legend_str,'Location','southeast');
+xlabel('Frequency in GHz') 
+ylabel('tan(\delta)')
+ylim([0 1])
+fg1.Position = [600 600 1500 600];
 
 % figure(1) 
 % subplot(121);
@@ -443,21 +363,21 @@ ylim([-10 10])
 % xlabel('Frequency in GHz') 
 % ylabel('Im(\epsilon)')
 % ylim([-10 10])
-
-figure(3) 
-subplot(121); 
-plot(f/1e9,S11_mag,f/1e9,S21_mag);
-legend('S11','S21');
-xlabel('Frequency in GHz') 
-ylabel('tested amp s11, s21')
-ylim([0,1])
-subplot(122) 
-plot(f/1e9,rad2deg(S11_phase),f/1e9,rad2deg(S21_phase)); 
-legend('S11','S21');
-xlabel('Frequency in GHz') 
-ylabel('tested phase s11, s21')
-ylim([-180,180])
-
+% 
+% figure(3) 
+% subplot(121); 
+% plot(f/1e9,S11_mag,f/1e9,S21_mag);
+% legend('S11','S21');
+% xlabel('Frequency in GHz') 
+% ylabel('tested amp s11, s21')
+% ylim([0,1])
+% subplot(122) 
+% plot(f/1e9,rad2deg(S11_phase),f/1e9,rad2deg(S21_phase)); 
+% legend('S11','S21');
+% xlabel('Frequency in GHz') 
+% ylabel('tested phase s11, s21')
+% ylim([-180,180])
+% 
 % figure(4) 
 % subplot(121); 
 % plot(f/1e9,real(group_delay_measured.*1e9));
