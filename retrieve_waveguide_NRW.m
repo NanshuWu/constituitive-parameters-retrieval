@@ -46,13 +46,6 @@ clc
 % tic
 filename_1='FR4_may30/PURE-WG-D=165.S2P';
 filename_2='data/wr90 s21 fr-4 d1 0 d2 0 delta 73.txt';
-
-% filename_1='data/retrieve lead s11 glass d 5.85 d1 75.15 d2 73.txt';
-% filename_2='data/retrieve lead s21 glass d 5.85 d1 75.15 d2 73.txt';
-% 
-% filename_1='data/retrieve s11 ptfe lossy d 30 d1 75.15 d2 48.85.txt';
-% filename_2='data/retrieve s21 ptfe lossy d 30 d1 75.15 d2 48.85.txt';
-
 is_simu=0;% simulation, choose 1; experiment choose 0;
 a=22.86e-3;
 h=10.16e-3;
@@ -63,7 +56,7 @@ n=-5:5;
 non_magnetic=0;
 is_air_gap=0;
 smooth_method=0;
-reduction_method=1;
+reduction_method=0;
 maxe_k=8;
 ave_n=10;
 am=22.86e-3;%real sample width
@@ -103,15 +96,11 @@ Z0=omega.*mu0./beta0;
 lambda0=c./f;% working frequency wavelength
 lambdac=2*a;
 lambda0g=lambda0./sqrt(1-(f_cutoff./f).^2);
-% lambda0g=1/sqrt((1./lambda0).^2-(1./lambdac).^2);
 group_delay_calculated=zeros(length(f),length(n));
 R1=exp(-1i.*beta0.*d1);R2=exp(-1i.*beta0.*d2);
 s11=(S11_mag.*exp(1i.*S11_phase))./(R1.^2);
 s21=(S21_mag.*exp(1i.*S21_phase))./(R1.*R2);
-% s21=(S21_mag.*exp(1i.*S21_phase)).*exp(1i.*beta0.*(d1+d2));
-% s11=(S11_mag.*exp(1i.*S11_phase)).*exp(1i.*2.*beta0.*d1);
 V1=s21+s11;V2=s21-s11;
-% X=(s11.^2-s21.^2+1)./2./s11;
 X=(1-V1.*V2)./(V1-V2);
 ri_1=X+sqrt(X.^2-1);
 ri_2=X-sqrt(X.^2-1);
@@ -272,7 +261,7 @@ switch reduction_method
         %     deps=-J\feps_g;
 
             if sum(abs(deps))<h
-                eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
+%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
                 eps_ret(fi,selected_branch)=eps_g;
                 break;
             end
@@ -352,7 +341,7 @@ switch reduction_method
         %     deps=-J\feps_g;
 
             if sum(abs(deps))<h
-                eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
+%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
                 eps_ret(fi,selected_branch)=eps_g;
                 break;
             end
@@ -520,16 +509,16 @@ ylim([-10 10])
 % ylabel('tested phase s11, s21')
 % ylim([-180,180])
 % 
-figure(7) 
-subplot(121); 
-plot(f/1e9,real(group_delay_measured.*1e9));
-xlabel('Frequency in GHz') 
-ylabel('Group Delay Measured')
-ylim([-1,1])
-subplot(122); 
-plot(repmat(f/1e9,1,length(n)),real(group_delay_calculated.*1e9));
-legend(legend_str,'Location','southeast');
-xlabel('Frequency in GHz') 
-ylabel('Group Delay Measured')
-ylim([-1,1])
+% figure(7) 
+% subplot(121); 
+% plot(f/1e9,real(group_delay_measured.*1e9));
+% xlabel('Frequency in GHz') 
+% ylabel('Group Delay Measured')
+% ylim([-1,1])
+% subplot(122); 
+% plot(repmat(f/1e9,1,length(n)),real(group_delay_calculated.*1e9));
+% legend(legend_str,'Location','southeast');
+% xlabel('Frequency in GHz') 
+% ylabel('Group Delay Measured')
+% ylim([-1,1])
 % toc
