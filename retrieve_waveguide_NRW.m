@@ -44,7 +44,7 @@ clear
 clc
 %#######################################################################
 % tic
-filename_1='FR4_may30/PURE-WG-D=165.S2P';
+filename_1='dataset/FR4_d1_82_d2_81_delta_2.S2P';
 filename_2='data/wr90 s21 fr-4 d1 0 d2 0 delta 73.txt';
 is_simu=0;% simulation, choose 1; experiment choose 0;
 a=22.86e-3; % waveguide size
