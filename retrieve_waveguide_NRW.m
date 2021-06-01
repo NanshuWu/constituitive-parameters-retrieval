@@ -47,12 +47,12 @@ clc
 filename_1='FR4_may30/PURE-WG-D=165.S2P';
 filename_2='data/wr90 s21 fr-4 d1 0 d2 0 delta 73.txt';
 is_simu=0;% simulation, choose 1; experiment choose 0;
-a=22.86e-3;
-h=10.16e-3;
-delta=165e-3;
-d1=0e-3;
-d2=0e-3;
-n=-5:5;
+a=22.86e-3; % waveguide size
+h=10.16e-3; % waveguide size
+delta=165e-3; % sample thickness
+d1=0e-3; % distance from port 1 to sample front surface
+d2=0e-3; % distance from port 2 to sample back surface
+n=-5:5; % branched
 non_magnetic=0;
 is_air_gap=0;
 smooth_method=0;
@@ -73,7 +73,6 @@ legend_str{ni} = ['n=' num2str(n(ni))];
 end
 %#######################################################################
 % import data 
-%#######################################################################
 switch is_simu
     case 1
         [ f, S11_re, S11_img ]=readS( filename_1,3,ds);
@@ -116,25 +115,14 @@ if size(ri,2)>length(n)
     ri=ri';
 end
 T=(s11+s21-ri)./(1-ri.*(s11+s21));
-% Group Delay measured
-group_delay_measured=-gradient(unwrap(angle(T)))./gradient(f)/pi/2;
-% group_delay_measured=-gradient(angle(T))./gradient(f)/pi/2;
-
-% New method calculate K
+group_delay_measured=-gradient(unwrap(angle(T)))./gradient(f)/pi/2;% group delay measured
 Kamp=abs(1./T);Kphase=unwrap(angle(1./T));
-% Kamp=abs(1./T);Kphase=angle(1./T);
 K=log(Kamp)+1i.*(Kphase+2.*pi.*n);
-
-% figure(10)
-% plot(repmat(f/1e9,1,length(n)),imag(K));
 
 id_1=1i.*(K./2./pi./delta);
 id_2=-1i.*(K./2./pi./delta);
 id(real(id_1)>0)=id_1(real(id_1)>0);
 id(real(id_1)<=0)=id_2(real(id_1)<=0);
-% if size(id,2)>length(n)
-%     id=id';
-% end
 id=reshape(id(:),length(f),[]);
 switch non_magnetic
     case 0
@@ -144,20 +132,11 @@ switch non_magnetic
         mu_ret=ones(length(f),length(n));
         eps_ret=lambda0.^2.*(id.^2+(1/lambdac).^2)./mu_ret;
 end
-
-% Calculate Group Delay
+% group delay calculated 
 for ni=1:length(n)
-% partial_p=sqrt(((eps_ret(:,ni).*mu_ret(:,ni))./(lambda0.^2))-(1./lambdac).^2);
 partial_p=real(sqrt((eps_ret(:,ni).*mu_ret(:,ni)./(lambda0.^2))-(1/lambdac).^2));
 group_delay_calculated(:,ni)=delta.*gradient(partial_p)./gradient(f);
 end
-
-% partial_p=sqrt((eps_ret.*mu_ret./lambda0./lambda0)-(1/lambdac).^2);
-% group_delay_calculated=delta.*gradient(partial_p)./gradient(repmat(f/1e9,1,length(n)));
-
-% group_delay_calculated=smoothdata(group_delay_calculated);
-% group_delay_measured=smoothdata(group_delay_measured);
-
 %#######################################################################
 % Curve fitting evaluation
 R_square=zeros(1,length(n));
@@ -174,9 +153,6 @@ selected_branch_base=find(R_square>0,1,'first');
 selected_branch_all=find(R_square>0);
 bss=find(min(abs(sum(diff(real(eps_ret(:,selected_branch_all))))))==abs(sum(diff(real(eps_ret(:,selected_branch_all))))));
 selected_branch=selected_branch_base+bss-1;
-% if eps_ret(1,selected_branch)<0.95
-%     selected_branch=selected_branch+1;
-% end
 %#######################################################################
 % Air gap correction
 if is_air_gap==1
@@ -205,73 +181,36 @@ switch reduction_method
             s22=S22_mag.*exp(1i.*S22_phase);
         end
         h=1e-8;
-        
         for fi=1:length(f)
             eps_g=eps_ret(fi,selected_branch);
             for ii=1:50
-            Errf=0;
-            EffF=0;
-            eps_gr=real(eps_g);
-            eps_gi=imag(eps_g);
-            propc0=1i*beta0(fi);
-            propc=@(eps_g) 1i.*sqrt(eps_g*eps0*mu0*omega(fi)^2-(2*pi/lambdac)^2);
-            Gam=@(propc) (propc0-propc)/(propc0+propc);
-            transcoef=@(propc) exp(-1*propc*delta);
-
-            fepsr1=@(transcoef,Gam) s11_nr(fi)*s22(fi)-s21_nr(fi)*s12(fi)-exp(-2*propc0*(d1+d2))*((transcoef^2-Gam^2)/(1-(Gam*transcoef)^2));
-            
-            eps_gr_pd=((eps_gr+h)+1i*eps_gi);
-            eps_gr_nd=((eps_gr-h)+1i*eps_gi);
-            eps_gi_pd=(eps_gr+1i*(eps_gi+h));
-            eps_gi_nd=(eps_gr+1i*(eps_gi-h));
-
-            Jrer=real((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-            Jrei=real((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-            Jier=imag((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-            Jiei=imag((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-
-            feps_g=[real(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
-            ErrF=abs(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));
-            if ErrF<h 
-                
-            	break;
+                Errf=0;
+                EffF=0;
+                eps_gr=real(eps_g);
+                eps_gi=imag(eps_g);
+                propc0=1i*beta0(fi);
+                propc=@(eps_g) 1i.*sqrt(eps_g*eps0*mu0*omega(fi)^2-(2*pi/lambdac)^2);
+                Gam=@(propc) (propc0-propc)/(propc0+propc);
+                transcoef=@(propc) exp(-1*propc*delta);
+                fepsr1=@(transcoef,Gam) s11_nr(fi)*s22(fi)-s21_nr(fi)*s12(fi)-exp(-2*propc0*(d1+d2))*((transcoef^2-Gam^2)/(1-(Gam*transcoef)^2));
+                eps_gr_pd=((eps_gr+h)+1i*eps_gi);
+                eps_gr_nd=((eps_gr-h)+1i*eps_gi);
+                eps_gi_pd=(eps_gr+1i*(eps_gi+h));
+                eps_gi_nd=(eps_gr+1i*(eps_gi-h));
+                Jrer=real((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
+                Jrei=real((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
+                Jier=imag((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
+                Jiei=imag((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
+                feps_g=[real(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
+                J=[Jrer,Jrei;Jier,Jiei];
+                injav=inv(J);
+                deps=-injav*feps_g;
+                eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
+                if sum(abs(deps))<h
+                    eps_ret(fi,selected_branch)=eps_g;
+                    break;
+                end
             end
-%             Errf=Errf+(abs(feps_g(1))+abs(feps_g(2)));
-
-%             if isnan(Jrer)
-%                 Jrer=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jrei)
-%                 Jrei=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jier)
-%                 Jier=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jiei)
-%                 Jiei=1e-8.*randn(1,1)./h/2;
-%             end
-            
-            J=[Jrer,Jrei;Jier,Jiei];
-            
-        %     J=[Jrf1,Jrf2;Jif1,Jif2];
-            injav=inv(J);
-        %     injav=[Jiei,-Jrei;-Jier,Jrer]./(Jrer*Jiei-Jrei*Jier);
-
-            deps=-injav*feps_g;
-        %     deps=-J\feps_g;
-
-            if sum(abs(deps))<h
-%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
-                eps_ret(fi,selected_branch)=eps_g;
-                break;
-            end
-            
-        %     deps_i=-injav*[imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
-
-            eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
-            
-            end
-
         end
     case 2
         s21_nr=s21.*exp(-1i.*beta0.*(d1+d2));
@@ -284,84 +223,42 @@ switch reduction_method
             s22=S22_mag.*exp(1i.*S22_phase);
         end
         h=1e-8;
-
         for fi=1:length(f)
             eps_g=eps_ret(fi,selected_branch);
             for ii=1:50
-            Errf=0;
-            eps_gr=real(eps_g);
-            eps_gi=imag(eps_g);
-            propc0=1i*beta0(fi);
-            propc=@(eps_g) 1i.*sqrt(eps_g*eps0*mu0*omega(fi)^2-(2*pi/lambdac)^2);
-            Gam=@(propc) (propc0-propc)/(propc0+propc);
-            transcoef=@(propc) exp(-1*propc*delta);
-            fepsr2=@(transcoef,Gam) 0.5*(s21_nr(fi)+s12(fi))-exp(-1*propc0*(d1+d2))*((transcoef*(1-Gam^2))/(1-(transcoef*Gam)^2));
-            eps_gr_pd=((eps_gr+h)+1i*eps_gi);
-            eps_gr_nd=((eps_gr-h)+1i*eps_gi);
-            eps_gi_pd=(eps_gr+1i*(eps_gi+h));
-            eps_gi_nd=(eps_gr+1i*(eps_gi-h));
-
-            Jrer=real((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-            Jrei=real((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-            Jier=imag((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-            Jiei=imag((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-
-            feps_g=[real(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
-            
-            ErrF=abs(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))));
-            Errf=Errf+(abs(feps_g(1))+abs(feps_g(2)));
-            if ErrF<h
-                eps_ret(fi,selected_branch)=eps_g;
-            	break;
-            end
-            
-%             if isnan(Jrer)
-%                 Jrer=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jrei)
-%                 Jrei=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jier)
-%                 Jier=1e-8.*randn(1,1)./h/2;
-%             end
-%             if isnan(Jiei)
-%                 Jiei=1e-8.*randn(1,1)./h/2;
-%             end
-            
-            J=[Jrer,Jrei;Jier,Jiei];
-            
-%             gn=1e-8.*randn(2,2);
-%             J=J+gn;
-
-        %     J=[Jrf1,Jrf2;Jif1,Jif2];
-            injav=inv(J);
-        %     injav=[Jiei,-Jrei;-Jier,Jrer]./(Jrer*Jiei-Jrei*Jier);
-
-            deps=-injav*feps_g;
-        %     deps=-J\feps_g;
-
-            if sum(abs(deps))<h
-%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
-                eps_ret(fi,selected_branch)=eps_g;
-                break;
-            end
-
-%             if ErrF<h
-%                 eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));
-%                 eps_ret(fi,selected_branch)=eps_g;
-%             	break;
-%             end
-
-            %     deps_i=-injav*[imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
-                eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2));       
+                Errf=0;
+                eps_gr=real(eps_g);
+                eps_gi=imag(eps_g);
+                propc0=1i*beta0(fi);
+                propc=@(eps_g) 1i.*sqrt(eps_g*eps0*mu0*omega(fi)^2-(2*pi/lambdac)^2);
+                Gam=@(propc) (propc0-propc)/(propc0+propc);
+                transcoef=@(propc) exp(-1*propc*delta);
+                fepsr2=@(transcoef,Gam) 0.5*(s21_nr(fi)+s12(fi))-exp(-1*propc0*(d1+d2))*((transcoef*(1-Gam^2))/(1-(transcoef*Gam)^2));
+                eps_gr_pd=((eps_gr+h)+1i*eps_gi);
+                eps_gr_nd=((eps_gr-h)+1i*eps_gi);
+                eps_gi_pd=(eps_gr+1i*(eps_gi+h));
+                eps_gi_nd=(eps_gr+1i*(eps_gi-h));
+                Jrer=real((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
+                Jrei=real((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
+                Jier=imag((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
+                Jiei=imag((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
+                feps_g=[real(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
+                J=[Jrer,Jrei;Jier,Jiei];
+                injav=inv(J);
+                deps=-injav*feps_g;
+                eps_g=eps_gr+deps(1)+1i*(eps_gi+deps(2)); 
+                if sum(abs(deps))<h
+                    eps_ret(fi,selected_branch)=eps_g;
+                    break;
+                end
             end
         end
     otherwise
 end
 %#######################################################################
-% Smoothing (The method of maximum entropy)
+% Smoothing 
 switch smooth_method
-    case 1
+    case 1 %The method of maximum entropy
         for ni=1:length(n)
             eps_ret_r=real(eps_ret(:,ni));
             eps_ret_i=imag(eps_ret(:,ni));
@@ -378,13 +275,11 @@ switch smooth_method
                     Moments(ki)=Moments(ki)+aki(ki,fi).*eps_ret_r(fi);
                 end
             end
-
             Atran=aki';
             matC=aki*Atran;
             matD=inv(matC);
             matE=matD*Moments';
             eps_sr=Atran*matE;
-
             Moments=zeros(1,maxe_k);
             for ki=1:maxe_k
                 for fi=1:length(f)
@@ -398,127 +293,43 @@ switch smooth_method
             eps_si=Atran*matE;
             eps_ret(:,ni)=eps_sr+1i*eps_si;
         end
-    case 2
+    case 2 % A general method
         eps_ret=movmean(eps_ret,ave_n);
         mu_ret=movmean(mu_ret,ave_n);
     otherwise
 end
 %#######################################################################
-figure(1) 
-subplot(121);
+% figures
+fg1=figure(1);
+subplot(151);
 plot(f/1e9,real(mu_ret(:,selected_branch))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz')
 ylabel('Re(\mu)') 
 ylim([-10 10])
-subplot(122) 
-plot(f/1e9,imag(mu_ret(:,selected_branch))); 
+subplot(152) 
+plot(f/1e9,imag(conj(mu_ret(:,selected_branch)))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Im(\mu)')
 ylim([-10 10])
-
-figure(2)
-subplot(121); 
+subplot(153); 
 plot(f/1e9,real(eps_ret(:,selected_branch))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Re(\epsilon)') 
 ylim([-10 10])
-subplot(122) 
-plot(f/1e9,imag(eps_ret(:,selected_branch))); 
+subplot(154) 
+plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))); 
 % legend(legend_str,'Location','southeast');
 xlabel('Frequency in GHz') 
 ylabel('Im(\epsilon)')
 ylim([-10 10])
-
-% figure(1) 
-% subplot(121);
-% plot(repmat(f/1e9,1,length(n)),real(mu_ret)); 
+subplot(155)
+plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))./real(eps_ret(:,selected_branch))); 
 % legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz')
-% ylabel('Re(\mu)') 
-% ylim([-10 10])
-% subplot(122) 
-% plot(repmat(f/1e9,1,length(n)),imag(mu_ret)); 
-% legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz') 
-% ylabel('Im(\mu)')
-% ylim([-10 10])
-% 
-% figure(2)
-% subplot(121); 
-% plot(repmat(f/1e9,1,length(n)),real(eps_ret)); 
-% legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz') 
-% ylabel('Re(\epsilon)') 
-% ylim([-10 10])
-% subplot(122) 
-% plot(repmat(f/1e9,1,length(n)),imag(eps_ret)); 
-% legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz') 
-% ylabel('Im(\epsilon)')
-% ylim([-10 10])
-
-% 
-% figure(3) 
-% subplot(121); 
-% plot(f/1e9,real(n2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Re(n)') 
-% ylim([-10 10])
-% subplot(122) 
-% plot(f/1e9,imag(n2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Im(n)')
-% ylim([-10 10])
-
-% figure(4) 
-% subplot(121); 
-% plot(f/1e9,real(Z2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Re(Z)') 
-% subplot(122) 
-% plot(f/1e9,imag(Z2)); 
-% xlabel('Frequency in GHz') 
-% ylabel('Im(Z)')
-
-% figure(5) 
-% subplot(121); 
-% plot(f/1e9,eps_sr); 
-% xlabel('Frequency in GHz') 
-% ylabel('Re(\epsilon)')
-% ylim([-10,10])
-% subplot(122) 
-% plot(f/1e9,eps_si); 
-% xlabel('Frequency in GHz') 
-% ylabel('Im(\epsilon)')
-% ylim([-10,10])
-
-% figure(6) 
-% subplot(121); 
-% plot(f/1e9,S11_mag,f/1e9,S21_mag);
-% legend('S11','S21');
-% xlabel('Frequency in GHz') 
-% ylabel('tested amp s11, s21')
-% ylim([0,1])
-% subplot(122) 
-% plot(f/1e9,rad2deg(S11_phase),f/1e9,rad2deg(S21_phase)); 
-% legend('S11','S21');
-% xlabel('Frequency in GHz') 
-% ylabel('tested phase s11, s21')
-% ylim([-180,180])
-% 
-% figure(7) 
-% subplot(121); 
-% plot(f/1e9,real(group_delay_measured.*1e9));
-% xlabel('Frequency in GHz') 
-% ylabel('Group Delay Measured')
-% ylim([-1,1])
-% subplot(122); 
-% plot(repmat(f/1e9,1,length(n)),real(group_delay_calculated.*1e9));
-% legend(legend_str,'Location','southeast');
-% xlabel('Frequency in GHz') 
-% ylabel('Group Delay Measured')
-% ylim([-1,1])
+xlabel('Frequency in GHz') 
+ylabel('tan(\delta)')
+ylim([0 1])
+fg1.Position = [600 600 1500 600];
 % toc
