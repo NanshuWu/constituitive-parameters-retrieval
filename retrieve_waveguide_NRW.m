@@ -54,13 +54,12 @@ d1=0e-3; % distance from port 1 to sample front face
 d2=0e-3; % distance from port 2 to sample end face
 n=-5:5; % branched
 non_magnetic=0;
-is_air_gap=0;
 smooth_method=0;
 reduction_method=0;
 maxe_k=8;
 ave_n=10;
-am=22.86e-3;%real sample width
-hm=10.16e-3;%real sample height
+gap_correction==1;
+hg=0e-3;% gap in height
 ds=1;%data sample span
 %#######################################################################
 eps0=8.85e-12; 
@@ -118,7 +117,6 @@ T=(s11+s21-ri)./(1-ri.*(s11+s21));
 group_delay_measured=-gradient(unwrap(angle(T)))./gradient(f)/pi/2;% group delay measured
 Kamp=abs(1./T);Kphase=unwrap(angle(1./T));
 K=log(Kamp)+1i.*(Kphase+2.*pi.*n);
-
 id_1=1i.*(K./2./pi./delta);
 id_2=-1i.*(K./2./pi./delta);
 id(real(id_1)>0)=id_1(real(id_1)>0);
@@ -155,7 +153,8 @@ bss=find(min(abs(sum(diff(real(eps_ret(:,selected_branch_all))))))==abs(sum(diff
 selected_branch=selected_branch_base+bss-1;
 %#######################################################################
 % Air gap correction
-if is_air_gap==1
+if gap_correction==1
+    hm=h-hg;
     % for eps
     eps_cr=real(eps_ret).*(hm./(h-(h-hm).*real(eps_ret)));
     ltanm=-imag(eps_ret)./real(eps_ret);
@@ -180,7 +179,7 @@ switch reduction_method
             s12=S12_mag.*exp(1i.*S12_phase);
             s22=S22_mag.*exp(1i.*S22_phase);
         end
-        h=1e-8;
+        de=1e-8;
         for fi=1:length(f)
             eps_g=eps_ret(fi,selected_branch);
             for ii=1:50
@@ -192,15 +191,15 @@ switch reduction_method
                 propc=@(eps_g) 1i.*sqrt(eps_g*eps0*mu0*omega(fi)^2-(2*pi/lambdac)^2);
                 Gam=@(propc) (propc0-propc)/(propc0+propc);
                 transcoef=@(propc) exp(-1*propc*delta);
-                fepsr1=@(transcoef,Gam) s11_nr(fi)*s22(fi)-s21_nr(fi)*s12(fi)-exp(-2*propc0*(d1+d2))*((transcoef^2-Gam^2)/(1-(Gam*transcoef)^2));
-                eps_gr_pd=((eps_gr+h)+1i*eps_gi);
-                eps_gr_nd=((eps_gr-h)+1i*eps_gi);
-                eps_gi_pd=(eps_gr+1i*(eps_gi+h));
-                eps_gi_nd=(eps_gr+1i*(eps_gi-h));
-                Jrer=real((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-                Jrei=real((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-                Jier=imag((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-                Jiei=imag((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
+                fepsr1=@(transcoef,Gam) s21_nr(fi)*s12(fi)-s11_nr(fi)*s22(fi)-exp(-2*propc0*(d1+d2))*((transcoef^2-Gam^2)/(1-(Gam*transcoef)^2));
+                eps_gr_pd=((eps_gr+de)+1i*eps_gi);
+                eps_gr_nd=((eps_gr-de)+1i*eps_gi);
+                eps_gi_pd=(eps_gr+1i*(eps_gi+de));
+                eps_gi_nd=(eps_gr+1i*(eps_gi-de));
+                Jrer=real((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/de/2);
+                Jrei=real((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/de/2);
+                Jier=imag((fepsr1(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr1(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/de/2);
+                Jiei=imag((fepsr1(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr1(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/de/2);
                 feps_g=[real(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr1(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
                 J=[Jrer,Jrei;Jier,Jiei];
                 injav=inv(J);
@@ -222,7 +221,7 @@ switch reduction_method
             s12=S12_mag.*exp(1i.*S12_phase);
             s22=S22_mag.*exp(1i.*S22_phase);
         end
-        h=1e-8;
+        de=1e-8;
         for fi=1:length(f)
             eps_g=eps_ret(fi,selected_branch);
             for ii=1:50
@@ -234,14 +233,14 @@ switch reduction_method
                 Gam=@(propc) (propc0-propc)/(propc0+propc);
                 transcoef=@(propc) exp(-1*propc*delta);
                 fepsr2=@(transcoef,Gam) 0.5*(s21_nr(fi)+s12(fi))-exp(-1*propc0*(d1+d2))*((transcoef*(1-Gam^2))/(1-(transcoef*Gam)^2));
-                eps_gr_pd=((eps_gr+h)+1i*eps_gi);
-                eps_gr_nd=((eps_gr-h)+1i*eps_gi);
-                eps_gi_pd=(eps_gr+1i*(eps_gi+h));
-                eps_gi_nd=(eps_gr+1i*(eps_gi-h));
-                Jrer=real((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-                Jrei=real((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
-                Jier=imag((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/h/2);
-                Jiei=imag((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/h/2);
+                eps_gr_pd=((eps_gr+de)+1i*eps_gi);
+                eps_gr_nd=((eps_gr-de)+1i*eps_gi);
+                eps_gi_pd=(eps_gr+1i*(eps_gi+de));
+                eps_gi_nd=(eps_gr+1i*(eps_gi-de));
+                Jrer=real((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/de/2);
+                Jrei=real((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/de/2);
+                Jier=imag((fepsr2(transcoef(propc(eps_gr_pd)),Gam(propc(eps_gr_pd)))-fepsr2(transcoef(propc(eps_gr_nd)),Gam(propc(eps_gr_nd))))/de/2);
+                Jiei=imag((fepsr2(transcoef(propc(eps_gi_pd)),Gam(propc(eps_gi_pd)))-fepsr2(transcoef(propc(eps_gi_nd)),Gam(propc(eps_gi_nd))))/de/2);
                 feps_g=[real(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))));imag(fepsr2(transcoef(propc(eps_g)),Gam(propc(eps_g))))];
                 J=[Jrer,Jrei;Jier,Jiei];
                 injav=inv(J);
