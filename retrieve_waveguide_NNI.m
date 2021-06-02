@@ -10,7 +10,7 @@ nd%#######################################################################
 % 
 % Advantages of new non-iterative method
 % · Smooth permittivity results, no divergence.
-% · Accurate.
+% · Accurate.
 % · Arbitrary length of samples can be used.
 % · Fast, non-iterative.
 % · No initial guess needed.
@@ -58,6 +58,8 @@ d2=81e-3;% distance from port 2 to sample end face
 delta=2e-3; % sample thickness
 is_simu=0; % for simulation choose 1, for experiment choose 0;
 n=-5:5; % branches
+gap_correction==1;
+hg=0e-3;% gap in height
 ds=1; % sampling interval
 %#######################################################################
 eps0=8.85e-12; 
@@ -150,6 +152,18 @@ selected_branch_all=find(R_square>0);
 bss=find(min(abs(sum(diff(real(eps_ret(:,selected_branch_all))))))==abs(sum(diff(real(eps_ret(:,selected_branch_all))))));
 selected_branch=selected_branch_base+bss-1;
 %#######################################################################
+% Air gap correction
+if gap_correction==1
+    hm=h-hg;
+    % for eps
+    eps_cr=real(eps_ret).*(hm./(h-(h-hm).*real(eps_ret)));
+    ltanm=-imag(eps_ret)./real(eps_ret);
+    ltanc=ltanm.*(h./(h-(h-hm).*real(eps_ret)));
+    eps_ci=-1.*ltanc.*eps_cr;
+    eps_ret=eps_cr+1i.*eps_ci;
+end
+%#######################################################################
+% Figures
 fg1=figure(1);
 subplot(151);
 plot(f/1e9,real(mu_ret(:,selected_branch))); 
