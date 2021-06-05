@@ -60,6 +60,7 @@ ave_n=10;
 gap_correction==0;
 hg=0e-3;% gap in height
 ds=1;%data sample span
+plot_type=1; % plot type
 %#######################################################################
 eps0=8.85e-12; 
 mu0=4*pi*1e-7; 
