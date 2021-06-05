@@ -30,9 +30,9 @@ nd%#######################################################################
 % | short+              |         |       |          |
 % | non-magnetics       |         |       |          |
 % +---------------------+---------+-------+----------+
-% | Lossy solids+       |   NRW   |  Fast |  Medium  |
+% | low loss solids+    |   ITER  |  Slow |  Medium  |
 % | short+              |         |       |          |
-% | magnetics           |         |       |          |
+% | magnetics/non-mag.  |         |       |          |
 % +---------------------+---------+-------+----------+
 % | low loss solids+    |   NIST  |  Slow |   Good   |
 % | long+               |         |       |          |
@@ -61,6 +61,7 @@ n=-5:5; % branches
 gap_correction==1;
 hg=0e-3;% gap in height
 ds=1; % sampling interval
+plot_type=1; % plot type
 %#######################################################################
 eps0=8.85e-12; 
 mu0=4*pi*1e-7; 
@@ -163,32 +164,56 @@ if gap_correction==1
     eps_ret=eps_cr+1i.*eps_ci;
 end
 %#######################################################################
+% correct store format
+eps_ret=conj(eps_ret);
+mu_ret=conj(mu_ret);
+%#######################################################################
 % Figures
-fg1=figure(1);
-subplot(151);
-plot(f/1e9,real(mu_ret(:,selected_branch))); 
-xlabel('Frequency in GHz')
-ylabel('Re(\mu)') 
-ylim([-10 10])
-subplot(152) 
-plot(f/1e9,imag(conj(mu_ret(:,selected_branch)))); 
-xlabel('Frequency in GHz') 
-ylabel('Im(\mu)')
-ylim([-10 10])
-subplot(153); 
-plot(f/1e9,real(eps_ret(:,selected_branch))); 
-xlabel('Frequency in GHz') 
-ylabel('Re(\epsilon)') 
-ylim([-10 10])
-subplot(154) 
-plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))); 
-xlabel('Frequency in GHz') 
-ylabel('Im(\epsilon)')
-ylim([-10 10])
-subplot(155)
-plot(f/1e9,imag(conj(eps_ret(:,selected_branch)))./real(eps_ret(:,selected_branch))); 
-xlabel('Frequency in GHz') 
-ylabel('tan(\delta)')
-ylim([0 1])
-fg1.Position = [600 600 1500 600];
+switch plot_type
+    case 1
+        fg1=figure(1);
+        subplot(161); 
+        plot(f/1e9,real(eps_ret(:,selected_branch)),'Color','k'); 
+        xlabel('Frequency in GHz') 
+        ylabel('Re(\epsilon)') 
+        ylim([-10 10])
+        subplot(162) 
+        plot(f/1e9,imag(eps_ret(:,selected_branch)),'Color','k'); 
+        xlabel('Frequency in GHz') 
+        ylabel('Im(\epsilon)')
+        ylim([-10 10])
+        subplot(163);
+        plot(f/1e9,real(mu_ret(:,selected_branch)),'Color','k'); 
+        xlabel('Frequency in GHz')
+        ylabel('Re(\mu)') 
+        ylim([-10 10])
+        subplot(164) 
+        plot(f/1e9,imag(mu_ret(:,selected_branch)),'Color','k'); 
+        xlabel('Frequency in GHz') 
+        ylabel('Im(\mu)')
+        ylim([-10 10])
+        subplot(165)
+        plot(f/1e9,imag(eps_ret(:,selected_branch))./real(eps_ret(:,selected_branch)),'Color','k'); 
+        xlabel('Frequency in GHz') 
+        ylabel('\epsilon tan(\delta)')
+        subplot(166)
+        plot(f/1e9,imag(mu_ret(:,selected_branch))./real(mu_ret(:,selected_branch)),'Color','k'); 
+        xlabel('Frequency in GHz') 
+        ylabel('\mu tan(\delta)')
+        fg1.Position = [500 500 1600 500];
+        fg1.Color='w';
+    case 2
+        legend_str={'Re(\epsilon)','Im(\epsilon)','\epsilon tan(\delta)','Re(\mu)','Im(\mu)','\mu tan(\delta)'};
+        fg1=figure(1);
+        plot(f/1e9,real(eps_ret(:,selected_branch)),...
+            f/1e9,imag(eps_ret(:,selected_branch)),...
+            f/1e9,imag(eps_ret(:,selected_branch))./real(eps_ret(:,selected_branch)),...
+            f/1e9,real(mu_ret(:,selected_branch)),...
+            f/1e9,imag(mu_ret(:,selected_branch)),...
+            f/1e9,imag(mu_ret(:,selected_branch))./real(mu_ret(:,selected_branch))); 
+        legend(legend_str,'Location','northeastoutside');
+        xlabel('Frequency in GHz')
+        fg1.Position = [500 500 800 500];
+        fg1.Color='w';
+end
 % toc
