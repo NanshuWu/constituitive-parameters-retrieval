@@ -83,8 +83,6 @@ switch is_simu
     case 0
         [ f, S11_mag, S11_phase, S21_mag, S21_phase,S12_mag,S12_phase,S22_mag,S22_phase ]=readS_fromtest( filename_1,9,ds);
         f=f./1e9;
-        S11_phase=deg2rad(S11_phase);
-        S21_phase=deg2rad(S21_phase);
 end
 %#######################################################################
 f=f.*1E9;
