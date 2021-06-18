@@ -57,7 +57,7 @@ non_magnetic=0;
 smooth_method=0;
 maxe_k=8;
 ave_n=10;
-gap_correction==0;
+gap_correction=0;
 hg=0e-3;% gap in height
 ds=1;%data sample span
 plot_type=1; % plot type
