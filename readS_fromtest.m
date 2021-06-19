@@ -1,8 +1,8 @@
 function [f,S11_mag,S11_phase,S21_mag,S21_phase,S12_mag,S12_phase,S22_mag,S22_phase]=readS_fromtest(filename, p,s)
 %% Read S params and export as linear amplitude and radical phase angle
 	    fileID = fopen(filename);
-	c2 = textscan(fileID,'# %s %s %s %s %f',1,'headerLines', 7);
-	c1 = textscan(fileID,'%f','headerlines',1);
+		c2 = textscan(fileID,'# %s %s %s %s %f',1,'CommentStyle', '!');
+		c1 = textscan(fileID,'%f','headerlines',1);
 	    data_type = c2{1,3};
 	    f = c1{1,1}(1:s*p:size(c1{1,1}));
 	    switch char(data_type) 
