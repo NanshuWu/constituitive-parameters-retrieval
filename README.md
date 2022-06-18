@@ -26,3 +26,15 @@ If data is from measurement, be sure to save them with `.S2P` format to make sur
 | Lossy solids + short + whatever magnetics | ITER     | Slow  | Medium   |
 | low loss solids + whatever length + non-magnetics   | NIST    | Slow  | Good     |
 | low loss solids + whatever length + non-magnetics   | NNI     | Fast  | Good     |
+
+# Another Solution
+
+## Retrieval Workshop
+
+There is a handy tool named `Retrieval Workshop` which integrated all algorithms mentioned above. You can process data with a simple click.
+
+![Image text](./retrieval_workshop.png)
+
+For inspecting sNp file extracted from VNA. Feel free to use `sNp viewer`
+
+![Image text](./snp_viewer.png)
